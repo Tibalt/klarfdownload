@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KLARF Linear Pattern Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .generate-section {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .generate-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px;
+        }
+        .generate-btn:hover {
+            background: #218838;
+        }
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .file-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f9f9f9;
+            transition: all 0.3s ease;
+        }
+        .file-card:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .file-name {
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 5px;
+        }
+        .file-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .file-stats {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+        .download-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+            margin-right: 10px;
+        }
+        .download-btn:hover {
+            background: #0056b3;
+        }
+        .download-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .sample-preview {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .sample-code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .copy-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .copy-btn:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 KLARF Linear Pattern Generator</h1>
+        
+        <div class="generate-section">
+            <h3>Step 1: Generate KLARF Files</h3>
+            <button class="generate-btn" onclick="generateFiles()">🔄 Generate 10 Linear Pattern Files</button>
+            <div id="status"></div>
+        </div>
+
+        <div id="fileSection" style="display: none;">
+            <h3>Step 2: Download Files</h3>
+            <div class="file-grid" id="fileGrid"></div>
+        </div>
+
+        <div class="sample-preview">
+            <h3>📄 Sample KLARF Content Preview</h3>
+            <button class="copy-btn" onclick="copySample()">📋 Copy Sample</button>
+            <div class="sample-code" id="sampleContent">Click "Generate Files" to see sample content...</div>
+        </div>
+    </div>
+
+    <script>
+        let generatedFiles = {};
+
+        // Utility functions for KLARF generation
+        function generateKlarfHeader(waferId, lotId, inspectionDate, waferSize = 200) {
+            return `FileVersion 1 8;
+FileTimestamp ${inspectionDate};
+InspectionStationID "KLA-Tencor";
+SampleType Wafer;
+ResultTimestamp ${inspectionDate};
+LotID "${lotId}";
+WaferID "${waferId}";
+SlotNumber 1;
+InspectionTest "DefectInspection";
+InspectionStationID "KLA-2XXX";
+SampleCenterLocation 0 0;
+OrientationMarkLocation 0 ${waferSize/2};
+WaferSize ${waferSize};
+SetupID "LinearPatternTest";
+StepSizeX 1;
+StepSizeY 1;
+FieldSize 1000 1000;
+ScanDirection LeftToRight;
+DefectRecordSpec "XREL YREL XINDEX YINDEX XSIZE YSIZE DEFECTAREA DSIZE CLASSNUMBER DEFECTID TEST CLUSTERNUMBER ROUGHBINNUMBER FINEBINNUMBER REVIEWSAMPLE";
+DefectList`;
+        }
+
+        function addNoise(coords, noise = 2.0) {
+            return coords.map(() => (Math.random() - 0.5) * noise * 2);
+        }
+
+        function generateHorizontalLine(centerY, length, xStart = -75, numDefects = 50) {
+            const x = Array.from({length: numDefects}, (_, i) => xStart + (length * i) / (numDefects - 1));
+            const y = Array(numDefects).fill(centerY);
+            const xNoise = addNoise(x);
+            const yNoise = addNoise(y);
+            return [x.map((v, i) => v + xNoise[i]), y.map((v, i) => v + yNoise[i])];
+        }
+
+        function generateVerticalLine(centerX, length, yStart = -75, numDefects = 50) {
+            const y = Array.from({length: numDefects}, (_, i) => yStart + (length * i) / (numDefects - 1));
+            const x = Array(numDefects).fill(centerX);
+            const xNoise = addNoise(x);
+            const yNoise = addNoise(y);
+            return [x.map((v, i) => v + xNoise[i]), y.map((v, i) => v + yNoise[i])];
+        }
+
+        function generateDiagonalLine(start, end, numDefects = 50) {
+            const x = Array.from({length: numDefects}, (_, i) => {
+                const t = i / (numDefects - 1);
+                return start[0] + t * (end[0] - start[0]);
+            });
+            const y = Array.from({length: numDefects}, (_, i) => {
+                const t = i / (numDefects - 1);
+                return start[1] + t * (end[1] - start[1]);
+            });
+            const xNoise = addNoise(x);
+            const yNoise = addNoise(y);
+            return [x.map((v, i) => v + xNoise[i]), y.map((v, i) => v + yNoise[i])];
+        }
+
+        function generateArc(center, radius, startAngle, endAngle, numDefects = 60) {
+            const angles = Array.from({length: numDefects}, (_, i) => {
+                const t = i / (numDefects - 1);
+                return startAngle + t * (endAngle - startAngle);
+            });
+            const x = angles.map(a => center[0] + radius * Math.cos(a));
+            const y = angles.map(a => center[1] + radius * Math.sin(a));
+            const xNoise = addNoise(x);
+            const yNoise = addNoise(y);
+            return [x.map((v, i) => v + xNoise[i]), y.map((v, i) => v + yNoise[i])];
+        }
+
+        function createKlarfContent(xCoords, yCoords, waferId, lotId) {
+            const date = new Date().toLocaleString('en-US');
+            const header = generateKlarfHeader(waferId, lotId, date);
+            const numDefects = xCoords.length;
+            
+            let content = header + '\n' + numDefects + ';\n';
+            
+            for (let i = 0; i < numDefects; i++) {
+                const x = xCoords[i].toFixed(2);
+                const y = yCoords[i].toFixed(2);
+                const xIdx = Math.round(parseFloat(x) + 100);
+                const yIdx = Math.round(parseFloat(y) + 100);
+                const size = (Math.random() * 2 + 0.5).toFixed(3);
+                const area = (parseFloat(size) * parseFloat(size)).toFixed(3);
+                const dsize = size;
+                const cls = Math.floor(Math.random() * 3) + 1;
+                
+                content += `${x} ${y} ${xIdx} ${yIdx} ${size} ${size} ${area} ${dsize} ${cls} ${i+1} 1 1 1 1 0;\n`;
+            }
+            
+            content += 'EndOfFile;\n';
+            return content;
+        }
+
+        function generateFiles() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<div class="status">🔄 Generating files...</div>';
+            
+            try {
+                generatedFiles = {};
+                
+                const patterns = [
+                    {name: 'horizontal_single', desc: 'Single horizontal scratch', gen: () => generateHorizontalLine(0, 150)},
+                    {name: 'vertical_single', desc: 'Single vertical scratch', gen: () => generateVerticalLine(0, 150)},
+                    {name: 'diagonal_45deg', desc: 'Diagonal scratch at 45°', gen: () => generateDiagonalLine([-70, -70], [70, 70])},
+                    {name: 'diagonal_neg45deg', desc: 'Diagonal scratch at -45°', gen: () => generateDiagonalLine([-70, 70], [70, -70])},
+                    {name: 'curved_arc', desc: 'Quarter circle arc', gen: () => generateArc([0, 0], 60, 0, Math.PI/2)},
+                    {name: 'triple_parallel', desc: 'Three parallel lines', gen: () => {
+                        let allX = [], allY = [];
+                        for (let i = 0; i < 3; i++) {
+                            const [x, y] = generateHorizontalLine(-30 + i * 30, 120, -60, 30);
+                            allX = allX.concat(x);
+                            allY = allY.concat(y);
+                        }
+                        return [allX, allY];
+                    }},
+                    {name: 'cross_pattern', desc: 'Cross-shaped pattern', gen: () => {
+                        const [xH, yH] = generateHorizontalLine(0, 100, -50, 25);
+                        const [xV, yV] = generateVerticalLine(0, 100, -50, 25);
+                        return [xH.concat(xV), yH.concat(yV)];
+                    }},
+                    {name: 'semicircle', desc: 'Semicircle arc', gen: () => generateArc([0, 0], 70, 0, Math.PI, 70)},
+                    {name: 'dense_horizontal', desc: 'Dense horizontal line', gen: () => generateHorizontalLine(20, 80, -40, 80)},
+                    {name: 'angled_30deg', desc: 'Line at 30° angle', gen: () => {
+                        const angle = Math.PI / 6;
+                        const len = 100;
+                        return generateDiagonalLine([-50, -50 * Math.tan(angle)], [50, 50 * Math.tan(angle)]);
+                    }}
+                ];
+
+                patterns.forEach((pattern, i) => {
+                    const filename = `linear_${pattern.name}.klarf`;
+                    const [x, y] = pattern.gen();
+                    const content = createKlarfContent(x, y, `W${(i+1).toString().padStart(2, '0')}`, `LOT_${(i+1).toString().padStart(2, '0')}`);
+                    
+                    generatedFiles[filename] = {
+                        content: content,
+                        description: pattern.desc,
+                        defectCount: x.length,
+                        size: Math.round(content.length / 1024)
+                    };
+                });
+
+                updateFileGrid();
+                showSample();
+                
+                statusDiv.innerHTML = '<div class="status success">✅ Successfully generated 10 KLARF files!</div>';
+                document.getElementById('fileSection').style.display = 'block';
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function updateFileGrid() {
+            const grid = document.getElementById('fileGrid');
+            grid.innerHTML = '';
+            
+            Object.entries(generatedFiles).forEach(([filename, data]) => {
+                const card = document.createElement('div');
+                card.className = 'file-card';
+                card.innerHTML = `
+                    <div class="file-name">${filename}</div>
+                    <div class="file-description">${data.description}</div>
+                    <div class="file-stats">${data.defectCount} defects • ${data.size} KB</div>
+                    <button class="download-btn" onclick="downloadFile('${filename}')">⬇️ Download</button>
+                    <button class="copy-btn" onclick="copyContent('${filename}')">📋 Copy</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function downloadFile(filename) {
+            try {
+                const data = generatedFiles[filename];
+                if (!data) throw new Error('File not found');
+                
+                const blob = new Blob([data.content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                console.log(`Downloaded: ${filename}`);
+            } catch (error) {
+                alert(`Download failed: ${error.message}`);
+            }
+        }
+
+        function copyContent(filename) {
+            try {
+                const data = generatedFiles[filename];
+                if (!data) throw new Error('File not found');
+                
+                navigator.clipboard.writeText(data.content).then(() => {
+                    alert(`Content of ${filename} copied to clipboard!`);
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textarea = document.createElement('textarea');
+                    textarea.value = data.content;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    alert(`Content of ${filename} copied to clipboard!`);
+                });
+            } catch (error) {
+                alert(`Copy failed: ${error.message}`);
+            }
+        }
+
+        function showSample() {
+            const firstFile = Object.keys(generatedFiles)[0];
+            if (firstFile) {
+                const content = generatedFiles[firstFile].content;
+                const lines = content.split('\n').slice(0, 25);
+                document.getElementById('sampleContent').textContent = lines.join('\n') + '\n... (showing first 25 lines) ...';
+            }
+        }
+
+        function copySample() {
+            const content = document.getElementById('sampleContent').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('Sample content copied to clipboard!');
+            }).catch(() => {
+                alert('Copy failed - please select and copy manually');
+            });
+        }
+    </script>
+</body>
+</html>
